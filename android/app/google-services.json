@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "417823923568",
+    "project_id": "medcluster-7c138",
+    "storage_bucket": "medcluster-7c138.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417823923568:android:399a563906bf3fb5bf83b5",
+        "android_client_info": {
+          "package_name": "com.example.medcluster"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCA0N-Vyr80ioMXncBgpnAURsbOo83hjao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
