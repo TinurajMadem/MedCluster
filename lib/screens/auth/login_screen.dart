@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'register_screen.dart'; // Import RegistrationScreen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -7,11 +9,38 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   String _selectedRole = "user"; // default role
+  bool _obscurePassword = true; // For password toggle
+
+  late AnimationController _registerButtonController;
+  late Animation<double> _registerButtonAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Animation for "New User? Register" button
+    _registerButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _registerButtonAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(_registerButtonController);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _registerButtonController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 12),
 
                 // Login text
@@ -48,7 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 32),
 
                 // Email
@@ -64,15 +91,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password
+                // Password with toggle
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: "Enter the password",
                     prefixIcon: const Icon(Icons.lock),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
                 ),
@@ -93,11 +132,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 SegmentedButton<String>(
                   segments: const <ButtonSegment<String>>[
                     ButtonSegment<String>(
-                        value: "user", label: Text("Donor"), icon: Icon(Icons.person)),
+                      value: "user",
+                      label: Text("Donor"),
+                      icon: Icon(Icons.person),
+                    ),
                     ButtonSegment<String>(
-                        value: "volunteer", label: Text("Volunteer"), icon: Icon(Icons.volunteer_activism)),
+                      value: "volunteer",
+                      label: Text("Volunteer"),
+                      icon: Icon(Icons.volunteer_activism),
+                    ),
                     ButtonSegment<String>(
-                        value: "doctor", label: Text("CareTaker"), icon: Icon(Icons.medical_services)),
+                      value: "doctor",
+                      label: Text("CareTaker"),
+                      icon: Icon(Icons.medical_services),
+                    ),
                   ],
                   selected: <String>{_selectedRole},
                   onSelectionChanged: (newSelection) {
@@ -106,7 +154,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     });
                   },
                 ),
-
                 const SizedBox(height: 24),
 
                 // Login Button
@@ -120,9 +167,58 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {
-                      debugPrint(
-                          "Email: ${_emailController.text}, Role: $_selectedRole");
+                    onPressed: () async {
+                      String email = _emailController.text.trim();
+                      String password = _passwordController.text.trim();
+
+                      if (email.isEmpty || password.isEmpty) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please enter email and password"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      String collection = '';
+                      if (_selectedRole == 'user') collection = 'donors';
+                      if (_selectedRole == 'volunteer')
+                        collection = 'volunteers';
+                      if (_selectedRole == 'doctor') collection = 'caretakers';
+
+                      try {
+                        final querySnapshot = await FirebaseFirestore.instance
+                            .collection(collection)
+                            .where('email', isEqualTo: email)
+                            .where('password', isEqualTo: password)
+                            .get();
+
+                        if (!mounted) return;
+
+                        if (querySnapshot.docs.isNotEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Login successful as $_selectedRole",
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Invalid credentials for selected role",
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                      }
                     },
                     child: const Text(
                       "Login",
@@ -130,31 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
 
                 // Forgot Password Button
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const ForgotPasswordScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(0.0, 1.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOut;
-
-                        var tween = Tween(begin: begin, end: end)
-                            .chain(CurveTween(curve: curve));
-
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                    ));
-                  },
+                  onPressed: () {},
                   child: Text(
                     "Forgot Password?",
                     style: TextStyle(
@@ -164,27 +240,72 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // New User? Register Button with animation
+                ScaleTransition(
+                  scale: _registerButtonAnimation,
+                  child: GestureDetector(
+                    onTapDown: (_) => _registerButtonController.forward(),
+                    onTapUp: (_) => _registerButtonController.reverse(),
+                    onTapCancel: () => _registerButtonController.reverse(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  const RegistrationScreen(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(0.0, 1.0);
+                                const end = Offset.zero;
+                                const curve = Curves.easeInOut;
+
+                                var tween = Tween(
+                                  begin: begin,
+                                  end: end,
+                                ).chain(CurveTween(curve: curve));
+
+                                return SlideTransition(
+                                  position: animation.drive(tween),
+                                  child: child,
+                                );
+                              },
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 20,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade700),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.shade700.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        "New User? Register",
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Dummy Forgot Password Screen
-class ForgotPasswordScreen extends StatelessWidget {
-  const ForgotPasswordScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Forgot Password")),
-      body: const Center(
-        child: Text(
-          "Forgot Password Page",
-          style: TextStyle(fontSize: 20),
         ),
       ),
     );

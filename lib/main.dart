@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // ✅ Firebase Core
-import 'screens/auth/register_screen.dart'; // ✅ Ensure correct path
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/auth/login_screen.dart'; // Start with login screen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // ✅ Initialize Firebase before running app
+  await Firebase.initializeApp(); // Initialize Firebase
 
   runApp(const MyApp());
 }
@@ -17,10 +17,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'MedCluster',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const RegistrationScreen(), // ✅ Start with Registration
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const LoginScreen(), // Show login screen first
     );
   }
 }
