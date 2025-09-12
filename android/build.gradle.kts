@@ -4,17 +4,18 @@ plugins {
     id("org.jetbrains.kotlin.android") apply false
 }
 
-
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        // Match versions with plugins above
+        // Android Gradle Plugin
+        classpath("com.android.tools.build:gradle:8.7.2")
+        // Google services (Firebase)
         classpath("com.google.gms:google-services:4.3.15")
-        classpath("com.android.tools.build:gradle:8.9.1")
-        classpath("com.google.gms:google-services:4.3.15")
+        // Kotlin Gradle plugin
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10")
     }
 }
 

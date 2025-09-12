@@ -25,11 +25,15 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        // Disable incremental compilation for Kotlin
+        freeCompilerArgs += listOf("-Xincremental=false")
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false  // Disable code shrinking to avoid resource errors
+            isShrinkResources = false
         }
     }
 }
@@ -43,5 +47,5 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
     implementation("com.google.firebase:firebase-analytics")
 }
-apply(plugin = "com.google.gms.google-services")
 
+apply(plugin = "com.google.gms.google-services")
