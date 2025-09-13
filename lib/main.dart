@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/auth/login_screen.dart'; // Start with login screen
+import 'screens/common/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'MedCluster',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const LoginScreen(), // Show login screen first
+      home: const SplashScreen(), // Start with SplashScreen
     );
   }
 }
