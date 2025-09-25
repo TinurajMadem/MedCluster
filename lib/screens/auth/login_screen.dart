@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart'; // Import RegistrationScreen
+import '../donor/donor_dashboard.dart'; // Import DonorDashboard
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +24,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-    // Animation for "New User? Register" button
     _registerButtonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 20),
 
-                // Role selection using SegmentedButton
+                // Role selection
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -197,6 +197,9 @@ class _LoginScreenState extends State<LoginScreen>
                         if (!mounted) return;
 
                         if (querySnapshot.docs.isNotEmpty) {
+                          final doc = querySnapshot.docs.first;
+                          final donorId = doc.id;
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -204,6 +207,17 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
                           );
+
+                          // Navigate to DonorDashboard with donorId
+                          if (_selectedRole == 'user') {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    DonorDashboard(donorId: donorId),
+                              ),
+                            );
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -228,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 12),
 
-                // Forgot Password Button
+                // Forgot Password
                 TextButton(
                   onPressed: () {},
                   child: Text(
