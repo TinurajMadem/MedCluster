@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class DonorDashboard extends StatefulWidget {
   final String donorName;
   final String donorId;
+
   const DonorDashboard({
     Key? key,
     required this.donorName,
@@ -11,12 +12,13 @@ class DonorDashboard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _DonorDashboardState createState() => _DonorDashboardState();
+  State<DonorDashboard> createState() => _DonorDashboardState();
 }
 
 class _DonorDashboardState extends State<DonorDashboard> {
   int _selectedIndex = 0;
 
+  /// ---------- HEADER ----------
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -57,6 +59,7 @@ class _DonorDashboardState extends State<DonorDashboard> {
     );
   }
 
+  /// ---------- BODY CONTENT ----------
   Widget _buildDonationsPlaceholder() {
     return const Center(
       child: Text(
@@ -97,6 +100,7 @@ class _DonorDashboardState extends State<DonorDashboard> {
     }
   }
 
+  /// ---------- BOTTOM NAV ----------
   Widget _buildBottomNav() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -131,6 +135,7 @@ class _DonorDashboardState extends State<DonorDashboard> {
     required int index,
   }) {
     final bool selected = _selectedIndex == index;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -171,14 +176,13 @@ class _DonorDashboardState extends State<DonorDashboard> {
     );
   }
 
+  /// ---------- MAIN BUILD ----------
   @override
   Widget build(BuildContext context) {
     if (widget.donorId.trim().isEmpty) {
       return const Scaffold(
         body: Center(
-          child: Text(
-            'Invalid donor. Please login with a Donor account.',
-          ),
+          child: Text('Invalid donor. Please login with a Donor account.'),
         ),
       );
     }
