@@ -1,6 +1,8 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'screens/volunteer/volunteer_dashboard.dart';
 import 'screens/caretaker/caretaker_dashboard.dart';
+import 'screens/donor/donor_dashboard.dart'; // ✅ Added Donor import
 
 void main() {
   runApp(const MyApp());
@@ -30,6 +32,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Volunteer
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -45,6 +48,8 @@ class HomeScreen extends StatelessWidget {
               child: const Text('Go to Volunteer Dashboard'),
             ),
             const SizedBox(height: 20),
+
+            // Caretaker
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -58,6 +63,23 @@ class HomeScreen extends StatelessWidget {
                 );
               },
               child: const Text('Go to Caretaker Dashboard'),
+            ),
+            const SizedBox(height: 20),
+
+            // Donor ✅
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DonorDashboard(
+                      donorId: 'DON001',
+                      donorName: 'Ramesh',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Go to Donor Dashboard'),
             ),
           ],
         ),

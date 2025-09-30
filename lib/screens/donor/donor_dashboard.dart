@@ -1,1 +1,199 @@
- 
+// lib/screens/donor/donor_dashboard.dart
+import 'package:flutter/material.dart';
+
+class DonorDashboard extends StatefulWidget {
+  final String donorName;
+  final String donorId;
+  const DonorDashboard({
+    Key? key,
+    required this.donorName,
+    required this.donorId,
+  }) : super(key: key);
+
+  @override
+  _DonorDashboardState createState() => _DonorDashboardState();
+}
+
+class _DonorDashboardState extends State<DonorDashboard> {
+  int _selectedIndex = 0;
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 36, bottom: 22),
+      decoration: const BoxDecoration(
+        color: Color(0xFF4EA1D3), // header blue
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'MedCluster Donor',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Welcome!! ${widget.donorName}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Your contributions save lives',
+            style: TextStyle(
+              color: Colors.white70,
+              fontStyle: FontStyle.italic,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDonationsPlaceholder() {
+    return const Center(
+      child: Text(
+        'Your donations will appear here',
+        style: TextStyle(color: Colors.grey, fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildHistoryPlaceholder() {
+    return const Center(
+      child: Text(
+        'Donation history will appear here',
+        style: TextStyle(color: Colors.grey, fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildProfilePlaceholder() {
+    return const Center(
+      child: Text(
+        'Profile will appear here',
+        style: TextStyle(color: Colors.grey, fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _bodyForIndex() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDonationsPlaceholder();
+      case 1:
+        return _buildHistoryPlaceholder();
+      case 2:
+        return _buildProfilePlaceholder();
+      default:
+        return _buildDonationsPlaceholder();
+    }
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2E7CB3),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(22),
+          topRight: Radius.circular(22),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 6,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _navItem(icon: Icons.favorite, label: 'Donations', index: 0),
+          _navItem(icon: Icons.history, label: 'History', index: 1),
+          _navItem(icon: Icons.person, label: 'Profile', index: 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final bool selected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white.withOpacity(0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: selected ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 260),
+              child: Icon(
+                icon,
+                color: selected ? Colors.white : Colors.white70,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.white70,
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.donorId.trim().isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            'Invalid donor. Please login with a Donor account.',
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(child: _bodyForIndex()),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+}
