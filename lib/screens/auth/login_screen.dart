@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart'; // Import RegistrationScreen
 import '../donor/donor_dashboard.dart'; // Import DonorDashboard
+import '../volunteer/volunteer_dashboard.dart';
+import '../caretaker/caretaker_dashboard.dart'; // ✅ Added caretaker dashboard import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -53,7 +55,6 @@ class _LoginScreenState extends State<LoginScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Name
                 Text(
                   "MedCluster",
                   style: TextStyle(
@@ -65,8 +66,6 @@ class _LoginScreenState extends State<LoginScreen>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-
-                // Login text
                 Text(
                   "Login",
                   style: TextStyle(
@@ -198,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                         if (querySnapshot.docs.isNotEmpty) {
                           final doc = querySnapshot.docs.first;
-                          final donorId = doc.id;
+                          final userId = doc.id;
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -208,13 +207,36 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           );
 
-                          // Navigate to DonorDashboard with donorId
                           if (_selectedRole == 'user') {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    DonorDashboard(donorId: donorId),
+                                    DonorDashboard(donorId: userId),
+                              ),
+                            );
+                          } else if (_selectedRole == 'volunteer') {
+                            final volunteerName = doc['name'] ?? "Volunteer";
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VolunteerDashboard(
+                                  volunteerId: userId,
+                                  volunteerName: volunteerName,
+                                ),
+                              ),
+                            );
+                          } else if (_selectedRole == 'doctor') {
+                            // ✅ Handle Caretaker login
+                            final caretakerName =
+                                doc['name'] ?? "Caretaker"; // from Firestore
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CaretakerDashboard(
+                                  caretakerId: userId,
+                                  caretakerName: caretakerName,
+                                ),
                               ),
                             );
                           }
@@ -256,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // New User? Register Button with animation
+                // Register Button
                 ScaleTransition(
                   scale: _registerButtonAnimation,
                   child: GestureDetector(

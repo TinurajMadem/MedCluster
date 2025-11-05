@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // <-- for input formatters
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:medcluster/screens/auth/login_screen.dart';
 
 class DonorProfile extends StatefulWidget {
-  final String donorId; // pass donorId from dashboard
+  final String donorId;
   const DonorProfile({super.key, required this.donorId});
 
   @override
@@ -15,18 +15,21 @@ class DonorProfile extends StatefulWidget {
 class _DonorProfileState extends State<DonorProfile> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _addressController;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _phoneController = TextEditingController();
+    _addressController = TextEditingController();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -36,6 +39,7 @@ class _DonorProfileState extends State<DonorProfile> {
     _phoneController.text = (data['phone'] != null)
         ? data['phone'].toString()
         : '';
+    _addressController.text = data['donor_address'] ?? '';
 
     showDialog(
       context: context,
@@ -51,92 +55,109 @@ class _DonorProfileState extends State<DonorProfile> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      "Edit Profile",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "Edit Profile",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Name",
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Name",
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                      decoration: const InputDecoration(
-                        labelText: "Phone Number (10 digits)",
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Phone Number (10 digits)",
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final newName = _nameController.text.trim();
-                        final newPhone = _phoneController.text.trim();
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _addressController,
+                        maxLength: 50,
+                        decoration: const InputDecoration(
+                          labelText: "Donor Address (max 50 chars)",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final newName = _nameController.text.trim();
+                          final newPhone = _phoneController.text.trim();
+                          final newAddress = _addressController.text.trim();
 
-                        if (newName.isEmpty || newPhone.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Name and Phone cannot be empty"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+                          if (newName.isEmpty ||
+                              newPhone.isEmpty ||
+                              newAddress.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("All fields are required."),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
 
-                        if (newPhone.length != 10) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Phone number must be 10 digits"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+                          if (newPhone.length != 10) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Phone number must be 10 digits.",
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
 
-                        try {
-                          await FirebaseFirestore.instance
-                              .collection('donors')
-                              .doc(widget.donorId)
-                              .update({
-                                'name': newName,
-                                'phone': int.tryParse(newPhone) ?? 0,
-                              });
+                          try {
+                            await FirebaseFirestore.instance
+                                .collection('donors')
+                                .doc(widget.donorId)
+                                .update({
+                                  'name': newName,
+                                  'phone': int.tryParse(newPhone) ?? 0,
+                                  'donor_address': newAddress,
+                                });
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Profile updated successfully!"),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Profile updated successfully!"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
 
-                          Navigator.of(context).pop(); // close popup
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Error: $e"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text("Apply Changes"),
-                    ),
-                  ],
+                            Navigator.of(context).pop();
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text("Apply Changes"),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Positioned(
@@ -189,7 +210,6 @@ class _DonorProfileState extends State<DonorProfile> {
           child: Column(
             children: [
               const SizedBox(height: 10),
-              // Heading with dark blue color and dotted underline
               CustomPaint(
                 painter: DottedUnderlinePainter(),
                 child: const Text(
@@ -197,7 +217,7 @@ class _DonorProfileState extends State<DonorProfile> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 29, 97, 165), // Dark Blue
+                    color: Color.fromARGB(255, 29, 97, 165),
                   ),
                 ),
               ),
@@ -235,6 +255,17 @@ class _DonorProfileState extends State<DonorProfile> {
                   ),
                 ),
               ),
+              ListTile(
+                title: const Text("Donor Address"),
+                subtitle: Text(
+                  data['donor_address'] ?? '-',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => _showEditProfilePopup(data),
@@ -255,19 +286,18 @@ class _DonorProfileState extends State<DonorProfile> {
   }
 }
 
-/// Custom painter for dotted underline
 class DottedUnderlinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const double dashWidth = 4;
     const double dashSpace = 4;
     final paint = Paint()
-      ..color = Color(0xFF003366)
+      ..color = const Color(0xFF003366)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     double startX = 0;
-    final y = size.height + 4; // 4px below text
+    final y = size.height + 4;
     while (startX < size.width) {
       canvas.drawLine(Offset(startX, y), Offset(startX + dashWidth, y), paint);
       startX += dashWidth + dashSpace;

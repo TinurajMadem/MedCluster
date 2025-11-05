@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'login_screen.dart'; // Import login screen for navigation
+import 'login_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -13,32 +13,30 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen>
     with TickerProviderStateMixin {
-  // <-- Changed here
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _locationController = TextEditingController();
 
-  // Extra fields
   final _workOrgController = TextEditingController();
   final _volAddressController = TextEditingController();
   final _careOrgController = TextEditingController();
   final _careAddressController = TextEditingController();
+  final _donorAddressController = TextEditingController();
 
   String? _selectedRole;
-  late AnimationController _animationController; // Register button
+  late AnimationController _animationController;
   late Animation<double> _buttonAnimation;
-
-  late AnimationController _loginButtonController; // Already user? Login
+  late AnimationController _loginButtonController;
   late Animation<double> _loginButtonAnimation;
 
   final Logger logger = Logger();
 
   double? _latitude;
   double? _longitude;
-
-  bool _obscurePassword = true; // Add password toggle
+  bool _obscurePassword = true;
+  bool _isFetchingLocation = false;
 
   @override
   void initState() {
@@ -73,6 +71,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     _volAddressController.dispose();
     _careOrgController.dispose();
     _careAddressController.dispose();
+    _donorAddressController.dispose();
     _animationController.dispose();
     _loginButtonController.dispose();
     super.dispose();
@@ -127,12 +126,72 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     );
   }
 
+  Future<bool> _emailExists(String email) async {
+    final firestore = FirebaseFirestore.instance;
+
+    final donors = await firestore
+        .collection("donors")
+        .where("email", isEqualTo: email)
+        .get();
+    if (donors.docs.isNotEmpty) return true;
+
+    final volunteers = await firestore
+        .collection("volunteers")
+        .where("email", isEqualTo: email)
+        .get();
+    if (volunteers.docs.isNotEmpty) return true;
+
+    final caretakers = await firestore
+        .collection("caretakers")
+        .where("email", isEqualTo: email)
+        .get();
+    if (caretakers.docs.isNotEmpty) return true;
+
+    return false;
+  }
+
   Future<void> _registerUser() async {
     try {
-      if (_selectedRole == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Please select a role")));
+      if (_nameController.text.isEmpty ||
+          _emailController.text.isEmpty ||
+          _phoneController.text.isEmpty ||
+          _passwordController.text.isEmpty ||
+          _selectedRole == null ||
+          _locationController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please fill all required fields")),
+        );
+        return;
+      }
+      if (_latitude == null || _longitude == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please fetch your location before registering"),
+          ),
+        );
+        return;
+      }
+
+      if (_selectedRole == "Donor" && _donorAddressController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter Donor Address")),
+        );
+        return;
+      }
+      if (_selectedRole == "CareTaker" &&
+          (_careOrgController.text.isEmpty ||
+              _careAddressController.text.isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please fill all Caretaker fields")),
+        );
+        return;
+      }
+
+      bool exists = await _emailExists(_emailController.text.trim());
+      if (exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Email already registered")),
+        );
         return;
       }
 
@@ -140,37 +199,51 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
       if (_selectedRole == "Donor") {
         await firestore.collection("donors").add({
-          "name": _nameController.text,
-          "email": _emailController.text,
+          "name": _nameController.text.trim(),
+          "email": _emailController.text.trim(),
           "phone": int.tryParse(_phoneController.text) ?? 0,
-          "password": _passwordController.text,
+          "password": _passwordController.text.trim(),
+          "donor_address": _donorAddressController.text.trim(),
           "location": _latitude != null && _longitude != null
               ? GeoPoint(_latitude!, _longitude!)
               : null,
         });
       } else if (_selectedRole == "Volunteer") {
         await firestore.collection("volunteers").add({
-          "name": _nameController.text,
-          "email": _emailController.text,
+          "name": _nameController.text.trim(),
+          "email": _emailController.text.trim(),
           "phone": int.tryParse(_phoneController.text) ?? 0,
-          "password": _passwordController.text,
-          "work_org": _workOrgController.text,
-          "vol_address": _volAddressController.text,
+          "password": _passwordController.text.trim(),
+          "work_org": _workOrgController.text.trim(),
+          "vol_address": _volAddressController.text.trim(),
           "vol_location": _latitude != null && _longitude != null
               ? GeoPoint(_latitude!, _longitude!)
               : null,
         });
       } else if (_selectedRole == "CareTaker") {
-        await firestore.collection("caretakers").add({
-          "name": _nameController.text,
-          "email": _emailController.text,
+        final caretakerRef = await firestore.collection("caretakers").add({
+          "name": _nameController.text.trim(),
+          "email": _emailController.text.trim(),
           "phone": int.tryParse(_phoneController.text) ?? 0,
-          "password": _passwordController.text,
-          "care_org": _careOrgController.text,
-          "care_address": _careAddressController.text,
+          "password": _passwordController.text.trim(),
+          "care_org": _careOrgController.text.trim(),
+          "care_address": _careAddressController.text.trim(),
           "care_location": _latitude != null && _longitude != null
               ? GeoPoint(_latitude!, _longitude!)
               : null,
+        });
+
+        // ✅ Add to Global "Organisations" collection
+        await firestore.collection("Organisations").add({
+          "caretaker_name": _nameController.text.trim(),
+          "caretaker_email": _emailController.text.trim(),
+          "caretaker_phone": int.tryParse(_phoneController.text) ?? 0,
+          "caretaker_org": _careOrgController.text.trim(),
+          "org_address": _careAddressController.text.trim(),
+          "org_location": _latitude != null && _longitude != null
+              ? GeoPoint(_latitude!, _longitude!)
+              : null,
+          "caretakerId": caretakerRef.id,
         });
       }
 
@@ -180,8 +253,6 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       ).showSnackBar(const SnackBar(content: Text("Registration successful")));
       logger.i("User registered in $_selectedRole collection");
 
-      // Navigate to login screen after successful registration
-      if (!mounted) return;
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
@@ -225,7 +296,6 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                 ),
               ),
               const SizedBox(height: 30),
-
               // Name
               TextField(
                 controller: _nameController,
@@ -266,7 +336,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
               ),
               const SizedBox(height: 20),
 
-              // Password with toggle
+              // Password
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -293,7 +363,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
               // Role Dropdown
               DropdownButtonFormField<String>(
-                initialValue: _selectedRole,
+                value: _selectedRole,
                 decoration: InputDecoration(
                   hintText: 'Select role',
                   border: OutlineInputBorder(
@@ -318,7 +388,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                 TextField(
                   controller: _workOrgController,
                   decoration: InputDecoration(
-                    hintText: 'Enter work organization',
+                    hintText: 'Enter volunteer organization',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -340,7 +410,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                 TextField(
                   controller: _careOrgController,
                   decoration: InputDecoration(
-                    hintText: 'Enter caretaker organization',
+                    hintText: 'Enter Organisation Name',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -350,7 +420,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                 TextField(
                   controller: _careAddressController,
                   decoration: InputDecoration(
-                    hintText: 'Enter caretaker address',
+                    hintText: 'Enter Organisation address',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -360,12 +430,26 @@ class _RegistrationScreenState extends State<RegistrationScreen>
               ],
 
               // Location
-              TextField(
+              TextFormField(
                 controller: _locationController,
-                readOnly: true,
-                onTap: _getLocation,
+                readOnly: false, // ✅ Editable
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please provide your location';
+                  }
+
+                  // ✅ Check if input matches a lat,long pattern (basic validation)
+                  final latLongRegex = RegExp(
+                    r'^-?\d{1,2}\.\d+,\s*-?\d{1,3}\.\d+$',
+                  );
+                  if (!latLongRegex.hasMatch(value.trim())) {
+                    return 'Please enter a valid latitude,longitude format';
+                  }
+
+                  return null;
+                },
                 decoration: InputDecoration(
-                  hintText: 'Tap to get location',
+                  hintText: 'Enter or view current location',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -375,6 +459,53 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+
+              // ✅ "Get Location" Button
+              ElevatedButton(
+                onPressed: _isFetchingLocation
+                    ? null
+                    : () async {
+                        setState(() => _isFetchingLocation = true);
+                        await _getLocation();
+                        setState(() => _isFetchingLocation = false);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 24,
+                  ),
+                ),
+                child: Text(
+                  _isFetchingLocation ? "Fetching Location..." : "Get Location",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Donor Address (below location)
+              if (_selectedRole == "Donor")
+                TextField(
+                  controller: _donorAddressController,
+                  maxLength: 50,
+                  decoration: InputDecoration(
+                    hintText: 'Enter Donor Address (max 50 chars)',
+                    counterText: "",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              if (_selectedRole == "Donor") const SizedBox(height: 10),
+
               const SizedBox(height: 30),
 
               // Register Button
