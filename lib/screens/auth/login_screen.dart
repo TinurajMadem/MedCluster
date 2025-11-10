@@ -128,31 +128,29 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  segments: const <ButtonSegment<String>>[
-                    ButtonSegment<String>(
-                      value: "user",
-                      label: Text("Donor"),
-                      icon: Icon(Icons.person),
+
+                // ✅ Redesigned role selection layout
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildRoleButton(
+                      role: "user",
+                      icon: Icons.person,
+                      label: "Donor",
                     ),
-                    ButtonSegment<String>(
-                      value: "volunteer",
-                      label: Text("Volunteer"),
-                      icon: Icon(Icons.volunteer_activism),
+                    _buildRoleButton(
+                      role: "volunteer",
+                      icon: Icons.volunteer_activism,
+                      label: "Volunteer",
                     ),
-                    ButtonSegment<String>(
-                      value: "doctor",
-                      label: Text("CareTaker"),
-                      icon: Icon(Icons.medical_services),
+                    _buildRoleButton(
+                      role: "doctor",
+                      icon: Icons.medical_services,
+                      label: "CareTaker",
                     ),
                   ],
-                  selected: <String>{_selectedRole},
-                  onSelectionChanged: (newSelection) {
-                    setState(() {
-                      _selectedRole = newSelection.first;
-                    });
-                  },
                 ),
+
                 const SizedBox(height: 24),
 
                 // Login Button
@@ -227,9 +225,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             );
                           } else if (_selectedRole == 'doctor') {
-                            // ✅ Handle Caretaker login
-                            final caretakerName =
-                                doc['name'] ?? "Caretaker"; // from Firestore
+                            final caretakerName = doc['name'] ?? "Caretaker";
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -259,20 +255,6 @@ class _LoginScreenState extends State<LoginScreen>
                     child: const Text(
                       "Login",
                       style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Forgot Password
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    "Forgot Password?",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.blue.shade700,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -343,6 +325,58 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ✅ Helper widget for role button
+  Widget _buildRoleButton({
+    required String role,
+    required IconData icon,
+    required String label,
+  }) {
+    final bool isSelected = _selectedRole == role;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedRole = role);
+      },
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue.shade100 : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? Colors.blue.shade700 : Colors.grey.shade300,
+                width: 1.5,
+              ),
+              boxShadow: [
+                if (isSelected)
+                  BoxShadow(
+                    color: Colors.blue.shade200.withOpacity(0.5),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: isSelected ? Colors.blue.shade800 : Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.blue.shade800 : Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }

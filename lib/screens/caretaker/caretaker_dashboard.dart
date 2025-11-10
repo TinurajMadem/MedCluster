@@ -1,7 +1,7 @@
 // lib/screens/caretaker/caretaker_dashboard.dart
 import 'package:flutter/material.dart';
 import 'caretaker_verify.dart';
-import 'caretaker_validate.dart';
+import 'caretaker_validated.dart';
 import 'caretaker_profile.dart';
 
 class CaretakerDashboard extends StatefulWidget {
@@ -92,11 +92,11 @@ class _CaretakerDashboardState extends State<CaretakerDashboard> {
       case 0:
         return CaretakerVerifyScreen(caretakerId: widget.caretakerId);
       case 1:
-        return _buildValidatedPlaceholder();
+        return CaretakerValidated(caretakerId: widget.caretakerId);
       case 2:
-        return _buildProfilePlaceholder();
+        return CaretakerProfileScreen(caretakerId: widget.caretakerId);
       default:
-        return _buildVerifyPlaceholder();
+        return CaretakerValidated(caretakerId: widget.caretakerId);
     }
   }
 
