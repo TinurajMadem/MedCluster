@@ -149,7 +149,10 @@ class _VolunteerPickupState extends State<VolunteerPickup> {
       await batch.commit();
       // ✅ Save cluster ID locally for persistence
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('assignedClusterId', clusterId);
+      await prefs.setString(
+        'assignedClusterId_${widget.volunteerId}',
+        clusterId,
+      );
 
       setState(() {
         _savedClusterId = clusterId;
@@ -629,12 +632,15 @@ class _VolunteerPickupState extends State<VolunteerPickup> {
 
   Future<void> _loadSavedCluster() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedCluster = prefs.getString('assignedClusterId');
+    final savedCluster = prefs.getString(
+      'assignedClusterId_${widget.volunteerId}',
+    );
 
     if (savedCluster != null) {
       final medsSnap = await FirebaseFirestore.instance
           .collection('Medicines')
           .where('clusterId', isEqualTo: savedCluster)
+          .where('assignedTo', isEqualTo: widget.volunteerId)
           .where('isCollected', isEqualTo: false)
           .get();
 
@@ -656,10 +662,7 @@ class _VolunteerPickupState extends State<VolunteerPickup> {
     // Fetch medicines based on stored or current assigned cluster
     final assignedQuery = FirebaseFirestore.instance
         .collection('Medicines')
-        .where(
-          _savedClusterId != null ? 'clusterId' : 'assignedTo',
-          isEqualTo: _savedClusterId ?? widget.volunteerId,
-        )
+        .where('assignedTo', isEqualTo: widget.volunteerId)
         .where('isCollected', isEqualTo: false)
         .snapshots();
 

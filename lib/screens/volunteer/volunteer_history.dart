@@ -843,6 +843,8 @@ class _VolunteerHistoryState extends State<VolunteerHistory> {
                                               "care_email":
                                                   selectedOrgData?['caretaker_email'] ??
                                                   '',
+                                              "organisation_ID":
+                                                  selectedOrgDocId ?? '',
                                             });
 
                                             // 2.5) Update in Global Medicines + Donor's subcollection
@@ -929,6 +931,9 @@ class _VolunteerHistoryState extends State<VolunteerHistory> {
                                                             '',
                                                         "organisation_address":
                                                             selectedOrgData?['org_address'] ??
+                                                            '',
+                                                        "org_docID":
+                                                            selectedOrgDocId ??
                                                             '',
                                                       });
                                                     }
