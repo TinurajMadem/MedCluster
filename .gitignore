@@ -43,3 +43,33 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ==============================
+# 🔐 Firebase Config Files
+# ==============================
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+firebase.json
+.firebaserc
+
+# ==============================
+# 🔐 Environment / Secrets
+# ==============================
+.env
+.env.*
+*.env
+
+# ==============================
+# 🔐 Cloudinary / API Config (if moved to config file later)
+# ==============================
+lib/config/cloudinary_config.dart
+
+# ==============================
+# 🔐 VS Code (optional)
+# ==============================
+.vscode/
+
+# ==============================
+# 🔐 Mac / Windows junk
+# ==============================
+Thumbs.db
